@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="lab4oop26-TrotsArtem/lab4oop26-TrotsArtem.vcxproj" />
+  <Project Path="lab4oop26-TrotsArtem/lab4oop26-TrotsArtem.vcxproj" Id="41ed0a73-f51a-4141-ba56-0c64f3d32212" />
 </Solution>

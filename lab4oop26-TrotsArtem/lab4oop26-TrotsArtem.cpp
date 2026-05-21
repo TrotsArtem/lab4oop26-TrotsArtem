@@ -1,261 +1,192 @@
 #include <iostream>
 #include <fstream>
-#include <cstdlib> 
-#include <ctime>   
 #include <string>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+#include <algorithm>
+#include <clocale>
 
 // ============================================================================
-// ЗАВДАННЯ 1.5. КЛАС VectorLong
+// ЗАВДАННЯ 1. Клас VectorLong (Варіант 1.5)
 // ============================================================================
 class VectorLong {
 private:
     long* data;
-    unsigned int size;
+    size_t size;
     int codeError;
-    static int objectCount;
+    static int object_count;
 
 public:
     VectorLong() : size(1), codeError(0) {
-        data = new long{ 0 };
-        objectCount++;
+        data = new long[1] {0};
+        object_count++;
     }
-    VectorLong(unsigned int s) : size(s), codeError(0) {
+
+    VectorLong(size_t s) : size(s), codeError(0) {
         data = new long[size] {0};
-        objectCount++;
+        object_count++;
     }
-    VectorLong(unsigned int s, long initVal) : size(s), codeError(0) {
-        data = new long[size];
-        for (unsigned int i = 0; i < size; i++) data[i] = initVal;
-        objectCount++;
-    }
+
     VectorLong(const VectorLong& other) : size(other.size), codeError(other.codeError) {
         data = new long[size];
-        for (unsigned int i = 0; i < size; i++) data[i] = other.data[i];
-        objectCount++;
+        for (size_t i = 0; i < size; ++i) data[i] = other.data[i];
+        object_count++;
     }
+
     ~VectorLong() {
         delete[] data;
-        objectCount--;
+        object_count--;
     }
 
-    static int getCount() { return objectCount; }
-    unsigned int getSize() const { return size; }
-    int getError() const { return codeError; }
-    void clearError() { codeError = 0; }
+    static int getObjectCount() { return object_count; }
+    int getCodeError() const { return codeError; }
 
-    VectorLong& operator=(const VectorLong& other) {
-        if (this != &other) {
-            delete[] data;
-            size = other.size;
-            codeError = other.codeError;
-            data = new long[size];
-            for (unsigned int i = 0; i < size; i++) data[i] = other.data[i];
-        }
-        return *this;
+    long& operator[](size_t index) {
+        if (index >= size) { codeError = 1; return data[size - 1]; }
+        return data[index];
     }
 
-    // Унарні оператори
-    VectorLong& operator++() {
-        for (unsigned int i = 0; i < size; i++) data[i]++;
-        return *this;
+    void operator()() {
+        std::cout << "[VectorLong Стан]: розмір = " << size << ", codeError = " << codeError << std::endl;
     }
-    VectorLong operator++(int) {
-        VectorLong temp(*this);
-        ++(*this);
-        return temp;
-    }
-    VectorLong& operator--() {
-        for (unsigned int i = 0; i < size; i++) data[i]--;
-        return *this;
-    }
-    VectorLong operator--(int) {
-        VectorLong temp(*this);
-        --(*this);
-        return temp;
-    }
-    bool operator!() const { return size != 0; }
+
     VectorLong operator~() const {
-        VectorLong temp(size);
-        for (unsigned int i = 0; i < size; i++) temp.data[i] = ~data[i];
-        return temp;
-    }
-    VectorLong operator-() const {
-        VectorLong temp(size);
-        for (unsigned int i = 0; i < size; i++) temp.data[i] = -data[i];
+        VectorLong temp(*this);
+        for (size_t i = 0; i < size; ++i) temp.data[i] = ~data[i];
         return temp;
     }
 
-    // Присвоєння з операцією
-    VectorLong& operator+=(const VectorLong& b) {
-        unsigned int minSize = (size < b.size) ? size : b.size;
-        for (unsigned int i = 0; i < minSize; i++) data[i] += b.data[i];
-        return *this;
-    }
-    VectorLong& operator-=(const VectorLong& b) {
-        unsigned int minSize = (size < b.size) ? size : b.size;
-        for (unsigned int i = 0; i < minSize; i++) data[i] -= b.data[i];
-        return *this;
-    }
-    VectorLong& operator*=(int b) {
-        for (unsigned int i = 0; i < size; i++) data[i] *= b;
-        return *this;
-    }
-    VectorLong& operator/=(int b) {
-        if (b == 0) { codeError = 2; return *this; }
-        for (unsigned int i = 0; i < size; i++) data[i] /= b;
-        return *this;
-    }
-    VectorLong& operator%=(int b) {
-        if (b == 0) { codeError = 2; return *this; }
-        for (unsigned int i = 0; i < size; i++) data[i] %= b;
-        return *this;
-    }
-    VectorLong& operator|=(const VectorLong& b) {
-        unsigned int minSize = (size < b.size) ? size : b.size;
-        for (unsigned int i = 0; i < minSize; i++) data[i] |= b.data[i];
-        return *this;
-    }
-    VectorLong& operator^=(const VectorLong& b) {
-        unsigned int minSize = (size < b.size) ? size : b.size;
-        for (unsigned int i = 0; i < minSize; i++) data[i] ^= b.data[i];
-        return *this;
-    }
-    VectorLong& operator&=(const VectorLong& b) {
-        unsigned int minSize = (size < b.size) ? size : b.size;
-        for (unsigned int i = 0; i < minSize; i++) data[i] &= b.data[i];
+    VectorLong& operator+=(const VectorLong& other) {
+        size_t min_s = std::min(size, other.size);
+        for (size_t i = 0; i < min_s; ++i) data[i] += other.data[i];
         return *this;
     }
 
-    // Бінарні оператори
-    VectorLong operator+(const VectorLong& b) const { VectorLong t(*this); return t += b; }
-    VectorLong operator-(const VectorLong& b) const { VectorLong t(*this); return t -= b; }
-    VectorLong operator*(int b) const { VectorLong t(*this); return t *= b; }
-    VectorLong operator/(int b) const { VectorLong t(*this); return t /= b; }
-    VectorLong operator%(int b) const { VectorLong t(*this); return t %= b; }
-    VectorLong operator|(const VectorLong& b) const { VectorLong t(*this); return t |= b; }
-    VectorLong operator^(const VectorLong& b) const { VectorLong t(*this); return t ^= b; }
-    VectorLong operator&(const VectorLong& b) const { VectorLong t(*this); return t &= b; }
-
-    long& operator[](unsigned int index) {
-        if (index >= size) {
-            codeError = 1;
-            return data[size - 1];
-        }
-        return data[index];
-    }
-    long operator()(unsigned int index) const {
-        if (index >= size) return 0;
-        return data[index];
+    VectorLong& operator-=(const VectorLong& other) {
+        size_t min_s = std::min(size, other.size);
+        for (size_t i = 0; i < min_s; ++i) data[i] -= other.data[i];
+        return *this;
     }
 
-    bool operator==(const VectorLong& b) const {
-        if (size != b.size) return false;
-        for (unsigned int i = 0; i < size; i++) if (data[i] != b.data[i]) return false;
-        return true;
+    VectorLong& operator*=(long num) {
+        for (size_t i = 0; i < size; ++i) data[i] *= num;
+        return *this;
     }
-    bool operator!=(const VectorLong& b) const { return !(*this == b); }
+
+    VectorLong& operator/=(long num) {
+        if (num == 0) { codeError = 2; return *this; }
+        for (size_t i = 0; i < size; ++i) data[i] /= num;
+        return *this;
+    }
+
+    VectorLong operator+(const VectorLong& other) const { VectorLong temp(*this); return temp += other; }
+    VectorLong operator-(const VectorLong& other) const { VectorLong temp(*this); return temp -= other; }
+    VectorLong operator*(long num) const { VectorLong temp(*this); return temp *= num; }
+    VectorLong operator/(long num) const { VectorLong temp(*this); return temp /= num; }
 
     friend std::ostream& operator<<(std::ostream& os, const VectorLong& v) {
-        for (unsigned int i = 0; i < v.size; i++) os << v.data[i] << " ";
+        for (size_t i = 0; i < v.size; ++i) os << v.data[i] << " ";
         return os;
     }
+
     friend std::istream& operator>>(std::istream& is, VectorLong& v) {
-        for (unsigned int i = 0; i < v.size; i++) is >> v.data[i];
+        for (size_t i = 0; i < v.size; ++i) is >> v.data[i];
         return is;
     }
 
-    void randomize(long minVal = 1, long maxVal = 50) {
-        for (unsigned int i = 0; i < size; i++) {
-            data[i] = minVal + rand() % (maxVal - minVal + 1);
-        }
+    void fillRandom(size_t s) {
+        delete[] data; size = s; data = new long[size];
+        for (size_t i = 0; i < size; ++i) data[i] = std::rand() % 50 + 1;
     }
-    bool loadFromFile(const std::string& filename) {
+
+    void fillFromKeyboard(size_t s) {
+        delete[] data; size = s; data = new long[size];
+        std::cout << "Введіть " << size << " чисел через пробіл: ";
+        for (size_t i = 0; i < size; ++i) std::cin >> data[i];
+    }
+
+    bool fillFromFile(size_t s, const std::string& filename) {
+        delete[] data; size = s; data = new long[size];
         std::ifstream file(filename);
         if (!file.is_open()) return false;
-        file >> size;
-        delete[] data;
-        data = new long[size];
-        for (unsigned int i = 0; i < size; i++) file >> data[i];
+        for (size_t i = 0; i < size && !file.eof(); ++i) file >> data[i];
         file.close();
         return true;
     }
 };
-int VectorLong::objectCount = 0;
+int VectorLong::object_count = 0;
 
 
 // ============================================================================
-// ЗАВДАННЯ 2.5. АСОЦІАТИВНИЙ КЛАС Електронна пошта та ПІБ
+// ЗАВДАННЯ 2. Асоціативний клас (Електронна пошта -> ПІБ) (Варіант 2.5)
 // ============================================================================
-struct Association {
+struct AccountPair {
     std::string email;
-    std::string pib;
+    std::string fullName;
 };
 
-class EmailPibMap {
+class EmailMap {
 private:
-    Association* records;
-    int capacity;
-    int count;
-    int CodeError;
+    std::vector<AccountPair> storage;
+    int codeError;
+    std::string fallback;
 
 public:
-    EmailPibMap(int cap = 20) : capacity(cap), count(0), CodeError(0) {
-        records = new Association[capacity];
-    }
-    ~EmailPibMap() { delete[] records; }
+    EmailMap() : codeError(0), fallback("") {}
 
-    int getCodeError() const { return CodeError; }
-    void clearError() { CodeError = 0; }
+    int getCodeError() const { return codeError; }
+    void clearError() { codeError = 0; }
 
-    void add(const std::string& email, const std::string& pib) {
-        if (count >= capacity) return;
-        records[count++] = { email, pib };
-    }
-
-    std::string& operator[](const std::string& keyEmail) {
-        for (int i = 0; i < count; i++) {
-            if (records[i].email == keyEmail) return records[i].pib;
+    void add(const std::string& email, const std::string& name) {
+        for (auto& pair : storage) {
+            if (pair.email == email) { pair.fullName = name; return; }
         }
-        CodeError = 404;
-        static std::string empty = "NOT_FOUND";
-        return empty;
+        storage.push_back({ email, name });
     }
 
-    std::string operator()(const std::string& keyPib) {
-        for (int i = 0; i < count; i++) {
-            if (records[i].pib == keyPib) return records[i].email;
+    std::string& operator[](const std::string& email) {
+        for (auto& pair : storage) {
+            if (pair.email == email) return pair.fullName;
         }
-        CodeError = 404;
+        codeError = 404;
+        fallback = "";
+        return fallback;
+    }
+
+    std::string operator()(const std::string& email) {
+        for (const auto& pair : storage) {
+            if (pair.email == email) return pair.fullName;
+        }
+        codeError = 404;
         return "NOT_FOUND";
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const EmailPibMap& map) {
-        for (int i = 0; i < map.count; i++) {
-            os << map.records[i].email << " -> " << map.records[i].pib << "\n";
+    friend std::ostream& operator<<(std::ostream& os, const EmailMap& map) {
+        if (map.storage.empty()) os << "  [База порожня]\n";
+        for (const auto& pair : map.storage) {
+            os << "  " << pair.email << " --> " << pair.fullName << "\n";
         }
         return os;
     }
-    friend std::istream& operator>>(std::istream& is, EmailPibMap& map) {
-        std::string em, pb;
-        if (is >> em) {
-            is.ignore();
-            std::getline(is, pb);
-            map.add(em, pb);
-        }
+
+    friend std::istream& operator>>(std::istream& is, EmailMap& map) {
+        std::string em, name;
+        std::cout << "  Введіть email: "; is >> em;
+        is.ignore();
+        std::cout << "  Введіть ПІБ: "; std::getline(is, name);
+        map.add(em, name);
         return is;
     }
 
-    bool loadFromFile(const std::string& filename) {
+    bool fillFromFile(const std::string& filename) {
         std::ifstream file(filename);
         if (!file.is_open()) return false;
-        int numRecords;
-        file >> numRecords;
-        for (int i = 0; i < numRecords; i++) {
-            std::string em, pb;
-            file >> em;
+        std::string em, name;
+        while (file >> em) {
             file.ignore();
-            std::getline(file, pb);
-            if (!em.empty() && !pb.empty()) add(em, pb);
+            std::getline(file, name);
+            if (!em.empty() && !name.empty()) add(em, name);
         }
         file.close();
         return true;
@@ -264,35 +195,24 @@ public:
 
 
 // ============================================================================
-// ЗАВДАННЯ 3.5. КЛАС Matrix3D
+// ЗАВДАННЯ 3. Матриці на основі Vector3D (Варіант 3.5)
 // ============================================================================
 class Vector3D {
 public:
-    double x, y, z;
-    int State;
-    static int count;
-    Vector3D() : x(0), y(0), z(0), State(0) { count++; }
-    Vector3D(double val) : x(val), y(val), z(val), State(0) { count++; }
-    Vector3D(const Vector3D& o) : x(o.x), y(o.y), z(o.z), State(o.State) { count++; }
-    ~Vector3D() { count--; }
+    int x, y, z;
+    Vector3D() : x(0), y(0), z(0) {}
+    Vector3D(int val) : x(val), y(val), z(val) {}
+    Vector3D(int x, int y, int z) : x(x), y(y), z(z) {}
 
     Vector3D& operator+=(const Vector3D& o) { x += o.x; y += o.y; z += o.z; return *this; }
     Vector3D& operator-=(const Vector3D& o) { x -= o.x; y -= o.y; z -= o.z; return *this; }
-    Vector3D& operator*=(double val) { x *= val; y *= val; z *= val; return *this; }
-    Vector3D operator+(const Vector3D& o) const { Vector3D t(*this); return t += o; }
-    Vector3D operator-(const Vector3D& o) const { Vector3D t(*this); return t -= o; }
-    Vector3D operator*(double val) const { Vector3D t(*this); return t *= val; }
+    Vector3D& operator*=(int val) { x *= val; y *= val; z *= val; return *this; }
 
     friend std::ostream& operator<<(std::ostream& os, const Vector3D& v) {
-        os << "[" << v.x << ", " << v.y << ", " << v.z << "]";
+        os << "(" << v.x << "," << v.y << "," << v.z << ")";
         return os;
     }
-    friend std::istream& operator>>(std::istream& is, Vector3D& v) {
-        is >> v.x >> v.y >> v.z;
-        return is;
-    }
 };
-int Vector3D::count = 0;
 
 class Matrix3D {
 protected:
@@ -307,79 +227,83 @@ public:
         PointArray = new Vector3D[n];
         num_matrix++;
     }
-    Matrix3D(int size, double initVal) : n(size), codeError(0) {
-        PointArray = new Vector3D[n];
-        for (int i = 0; i < n; i++) PointArray[i] = Vector3D(initVal);
-        num_matrix++;
-    }
     Matrix3D(const Matrix3D& other) : n(other.n), codeError(other.codeError) {
         PointArray = new Vector3D[n];
-        for (int i = 0; i < n; i++) PointArray[i] = other.PointArray[i];
+        for (int i = 0; i < n; ++i) PointArray[i] = other.PointArray[i];
         num_matrix++;
     }
-    ~Matrix3D() {
-        delete[] PointArray;
-        num_matrix--;
+    ~Matrix3D() { delete[] PointArray; num_matrix--; }
+
+    static int getNumMatrix() { return num_matrix; }
+
+    Matrix3D operator-() const {
+        Matrix3D temp(*this);
+        for (int i = 0; i < n; ++i) { temp.PointArray[i].x *= -1; temp.PointArray[i].y *= -1; temp.PointArray[i].z *= -1; }
+        return temp;
     }
 
-    static int getMatrixCount() { return num_matrix; }
-
     Matrix3D& operator=(const Matrix3D& other) {
-        if (this != &other) {
-            delete[] PointArray;
-            n = other.n;
-            codeError = other.codeError;
-            PointArray = new Vector3D[n];
-            for (int i = 0; i < n; i++) PointArray[i] = other.PointArray[i];
-        }
+        if (this == &other) return *this;
+        delete[] PointArray; n = other.n; codeError = other.codeError;
+        PointArray = new Vector3D[n];
+        for (int i = 0; i < n; ++i) PointArray[i] = other.PointArray[i];
         return *this;
     }
 
-    Matrix3D operator+(const Matrix3D& b) const {
-        Matrix3D res(n);
-        for (int i = 0; i < n; i++) res.PointArray[i] = PointArray[i] + b.PointArray[i];
-        return res;
-    }
-    Matrix3D operator-(const Matrix3D& b) const {
-        Matrix3D res(n);
-        for (int i = 0; i < n; i++) res.PointArray[i] = PointArray[i] - b.PointArray[i];
-        return res;
-    }
-    Matrix3D operator*(double val) const {
-        Matrix3D res(n);
-        for (int i = 0; i < n; i++) res.PointArray[i] = PointArray[i] * val;
-        return res;
+    Matrix3D operator+(const Matrix3D& other) const {
+        Matrix3D temp(*this); int min_n = std::min(n, other.n);
+        for (int i = 0; i < min_n; ++i) temp.PointArray[i] += other.PointArray[i];
+        return temp;
     }
 
-    Vector3D& operator[](int index) {
-        if (index >= n || index < 0) { codeError = 1; return PointArray[n - 1]; }
-        return PointArray[index];
+    Matrix3D operator-(const Matrix3D& other) const {
+        Matrix3D temp(*this); int min_n = std::min(n, other.n);
+        for (int i = 0; i < min_n; ++i) temp.PointArray[i] -= other.PointArray[i];
+        return temp;
+    }
+
+    Matrix3D operator*(int scalar) const {
+        Matrix3D temp(*this);
+        for (int i = 0; i < n; ++i) temp.PointArray[i] *= scalar;
+        return temp;
+    }
+
+    Matrix3D operator*(double scalar) const {
+        Matrix3D temp(*this);
+        for (int i = 0; i < n; ++i) {
+            temp.PointArray[i].x = static_cast<int>(temp.PointArray[i].x * scalar);
+            temp.PointArray[i].y = static_cast<int>(temp.PointArray[i].y * scalar);
+            temp.PointArray[i].z = static_cast<int>(temp.PointArray[i].z * scalar);
+        }
+        return temp;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Matrix3D& m) {
-        for (int i = 0; i < m.n; i++) os << m.PointArray[i] << "\n";
+        for (int i = 0; i < m.n; ++i) os << m.PointArray[i] << " ";
         return os;
     }
-    friend std::istream& operator>>(std::istream& is, Matrix3D& m) {
-        for (int i = 0; i < m.n; i++) is >> m.PointArray[i];
-        return is;
+
+    void fillRandom(int size) {
+        delete[] PointArray; n = size; PointArray = new Vector3D[n];
+        for (int i = 0; i < n; ++i) PointArray[i] = Vector3D(std::rand() % 10, std::rand() % 10, std::rand() % 10);
     }
 
-    void fillRandom() {
-        for (int i = 0; i < n; i++) {
-            PointArray[i].x = 1.0 + (rand() % 900) / 100.0;
-            PointArray[i].y = 1.0 + (rand() % 900) / 100.0;
-            PointArray[i].z = 1.0 + (rand() % 900) / 100.0;
+    void fillFromKeyboard(int size) {
+        delete[] PointArray; n = size; PointArray = new Vector3D[n];
+        std::cout << "Введіть " << size << " тривимірних точок (формат: x y z):\n";
+        for (int i = 0; i < n; ++i) {
+            std::cout << "  Точка [" << i << "]: ";
+            std::cin >> PointArray[i].x >> PointArray[i].y >> PointArray[i].z;
         }
     }
 
-    bool loadFromFile(const std::string& filename) {
+    bool fillFromFile(int size, const std::string& filename) {
+        delete[] PointArray; n = size; PointArray = new Vector3D[n];
         std::ifstream file(filename);
         if (!file.is_open()) return false;
-        file >> n;
-        delete[] PointArray;
-        PointArray = new Vector3D[n];
-        for (int i = 0; i < n; i++) file >> PointArray[i].x >> PointArray[i].y >> PointArray[i].z;
+        for (int i = 0; i < n && !file.eof(); ++i) {
+            file >> PointArray[i].x >> PointArray[i].y >> PointArray[i].z;
+        }
         file.close();
         return true;
     }
@@ -387,169 +311,156 @@ public:
 int Matrix3D::num_matrix = 0;
 
 
-// Помічна функція для створення демонстраційних файлів на диску
-void createDummyFiles() {
-    std::ofstream f1("vector_data.txt");
-    f1 << "5\n10 20 30 40 50\n";
-    f1.close();
-
-    std::ofstream f2("matrix_data.txt");
-    f2 << "3\n1.1 1.2 1.3\n2.1 2.2 2.3\n3.1 3.2 3.3\n";
-    f2.close();
-
-    std::ofstream f3("map_data.txt");
-    f3 << "2\nteacher@chnu.edu.ua\nЛазорик В.В.\ndekanat@chnu.edu.ua\nПетров П.П.\n";
-    f3.close();
+// Helper функція вибору типу заповнення даних
+int chooseInputMethod() {
+    int choice;
+    std::cout << "Оберіть метод введення даних:\n";
+    std::cout << "  1 - З клавіатури (Вручну)\n";
+    std::cout << "  2 - З файлу (Потрібні готові файли)\n";
+    std::cout << "  3 - Датчик випадкових чисел (Автогенерація)\n";
+    std::cout << "Ваш вибір: ";
+    std::cin >> choice;
+    return choice;
 }
 
 // ============================================================================
-// ГОЛОВНЕ КОНСОЛЬНЕ МЕНЮ ДЛЯ РУЧНОГО ТЕСТУВАННЯ
+// ГОЛОВНА КОНСОЛЬНА ПРОГРАМА З МЕНЮ
 // ============================================================================
 int main() {
-    srand(static_cast<unsigned int>(time(NULL)));
-    createDummyFiles(); // Створюємо файли автогенерацією, щоб користувачу було звідки читати
+    std::setlocale(LC_ALL, "uk_UA.UTF-8");
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    int mainChoice = 0;
+    // Авто-генерація заготовок файлів (про всяк випадок, якщо оберуть файл)
+    {
+        std::ofstream f1("vector_data.txt"); f1 << "5 10 15 20 25"; f1.close();
+        std::ofstream f2("emails.txt"); f2 << "shevchenko@knu.ua\nШевченко Тарас Григорович\nfranko@knu.ua\nФранко Іван Якович\n"; f2.close();
+        std::ofstream f3("matrix_data.txt"); f3 << "1 2 3\n4 5 6\n7 8 9\n"; f3.close();
+    }
+
+    int taskChoice = 0;
     while (true) {
         std::cout << "\n==================================================\n";
-        std::cout << "                 ГОЛОВНЕ МЕНЮ                     \n";
+        std::cout << "          ГОЛОВНЕ МЕНЮ ЛАБОРАТОРНОЇ РОБОТИ        \n";
         std::cout << "==================================================\n";
-        std::cout << "1. Тестувати Завдання 1.5 (Вектори VectorLong)\n";
-        std::cout << "2. Тестувати Завдання 2.5 (Асоціативний EmailPibMap)\n";
-        std::cout << "3. Тестувати Завдання 3.5 (Матриці Matrix3D)\n";
-        std::cout << "0. Вийти з програми\n";
-        std::cout << "Ваш вибір: ";
-        std::cin >> mainChoice;
+        std::cout << "1. Завдання 1: Робота з Векторами (VectorLong)\n";
+        std::cout << "2. Завдання 2: Асоціативний Словник (EmailMap)\n";
+        std::cout << "3. Завдання 3: Робота з Матрицями (Matrix3D)\n";
+        std::cout << "0. Вихід з програми\n";
+        std::cout << "Оберіть номер завдання: ";
+        std::cin >> taskChoice;
 
-        if (mainChoice == 0) break;
+        if (taskChoice == 0) break;
 
-        switch (mainChoice) {
+        switch (taskChoice) {
         case 1: {
-            int inputType;
-            std::cout << "\n--- ОБЕРІТЬ СПОСІБ ВВЕДЕННЯ ДЛЯ ВЕКТОРІВ ---\n";
-            std::cout << "1. Вручну з клавіатури\n";
-            std::cout << "2. Завантажити з файлу (vector_data.txt)\n";
-            std::cout << "3. Використати датчик випадкових чисел\n";
-            std::cout << "Вибір: ";
-            std::cin >> inputType;
+            std::cout << "\n--- [ЗАВДАННЯ 1: Векторні вирази з 5+ операцій] ---\n";
+            int method = chooseInputMethod();
+            VectorLong v1, v2, v3, v4, v5;
+            size_t size = 5;
 
-            VectorLong A(5), B(5), C(5);
-
-            if (inputType == 1) {
-                std::cout << "Введіть 5 елементів для вектора A: "; std::cin >> A;
-                std::cout << "Введіть 5 елементів для вектора B: "; std::cin >> B;
-                std::cout << "Введіть 5 елементів для вектора C: "; std::cin >> C;
+            if (method == 1) {
+                std::cout << "Введення для v1: "; v1.fillFromKeyboard(size);
+                std::cout << "Введення для v2: "; v2.fillFromKeyboard(size);
+                std::cout << "Введення для v3: "; v3.fillFromKeyboard(size);
+                std::cout << "Введення для v4: "; v4.fillFromKeyboard(size);
+                std::cout << "Введення для v5: "; v5.fillFromKeyboard(size);
             }
-            else if (inputType == 2) {
-                if (A.loadFromFile("vector_data.txt") && B.loadFromFile("vector_data.txt") && C.loadFromFile("vector_data.txt")) {
-                    std::cout << "Дані успішно зчитано з файлу!\n";
+            else if (method == 2) {
+                if (!v1.fillFromFile(size, "vector_data.txt")) {
+                    std::cout << "Помилка відкриття файлу! Авто-перемикання на рандом.\n";
+                    v1.fillRandom(size); v2.fillRandom(size); v3.fillRandom(size); v4.fillRandom(size); v5.fillRandom(size);
                 }
                 else {
-                    std::cout << "Помилка читання файлу! Застосовано нулі.\n";
+                    v2.fillFromFile(size, "vector_data.txt"); v3.fillFromFile(size, "vector_data.txt");
+                    v4.fillFromFile(size, "vector_data.txt"); v5.fillFromFile(size, "vector_data.txt");
                 }
             }
             else {
-                A.randomize(1, 10);
-                B.randomize(2, 6);
-                C.randomize(1, 3);
+                v1.fillRandom(size); v2.fillRandom(size); v3.fillRandom(size); v4.fillRandom(size); v5.fillRandom(size);
             }
 
-            std::cout << "\nПоточні вектори:\n";
-            std::cout << "A: " << A << "\nB: " << B << "\nC: " << C << "\n";
+            std::cout << "\nЗчитані вектори:\n";
+            std::cout << "v1: " << v1 << "\nv2: " << v2 << "\nv3: " << v3 << "\n";
 
-            // Обчислення виразу з понад 5 операцій
-            VectorLong ResultV = (A + B) * 2 - (-C) + (A & B) - ++C;
-            std::cout << "Результат векторного виразу: " << ResultV << "\n";
-            std::cout << "Загальна кількість активних VectorLong: " << VectorLong::getCount() << "\n";
+            // Векторний вираз (6 операцій: +, *, -, /, ~, +)
+            VectorLong v_res = v1 + v2 * 2 - v3 / 2 + (~v4) + v5;
+            std::cout << "\nРезультат виразу (v1 + v2 * 2 - v3 / 2 + (~v4) + v5):\n" << v_res << "\n";
+            v_res(); // Виклик оператора ()
+            std::cout << "Активних об'єктів у пам'яті: " << VectorLong::getObjectCount() << "\n";
             break;
         }
         case 2: {
-            EmailPibMap contacts(10);
-            int inputType;
-            std::cout << "\n--- ОБЕРІТЬ СПОСІБ ВВЕДЕННЯ ДЛЯ АСОЦІАТИВНОГО МАСИВУ ---\n";
-            std::cout << "1. Вручну з клавіатури (1 запис)\n";
-            std::cout << "2. Зчитати з файлу (map_data.txt)\n";
-            std::cout << "Вибір: ";
-            std::cin >> inputType;
+            std::cout << "\n--- [ЗАВДАННЯ 2: Асоціативний масив Email -> ПІБ] ---\n";
+            EmailMap db;
+            int method = chooseInputMethod();
 
-            if (inputType == 1) {
-                std::cout << "Введіть Email та ПІБ (через Enter):\n";
-                std::cin >> contacts;
+            if (method == 1) {
+                int count;
+                std::cout << "Скільки записів ви хочете ввести? "; std::cin >> count;
+                for (int i = 0; i < count; ++i) {
+                    std::cin >> db; // Використовує дружній оператор >>
+                }
+            }
+            else if (method == 2) {
+                db.fillFromFile("emails.txt");
+                std::cout << "Дані успішно імпортовано з файлу 'emails.txt'\n";
             }
             else {
-                contacts.loadFromFile("map_data.txt");
-                std::cout << "Записи зчитано з файлу.\n";
+                db.add("random.user1@knu.ua", "Іванов Іван Іванович");
+                db.add("test.student@knu.ua", "Петров Петро Петрович");
+                std::cout << "Базу автоматично заповнено тестовими рандомними даними.\n";
             }
 
-            std::cout << "\nПоточна база контактів:\n" << contacts;
+            std::cout << "\nПоточний стан бази:\n" << db;
 
-            // Ручний інтерактивний пошук
-            int subChoice;
-            std::cout << "\n1. Шукати ПІБ за допомогою Email (оператор [])\n";
-            std::cout << "2. Шукати Email за допомогою ПІБ (оператор ())\n";
-            std::cout << "Вибір: ";
-            std::cin >> subChoice;
+            // Пошук
+            std::string searchEmail;
+            std::cout << "\nВведіть email для пошуку в базі: ";
+            std::cin >> searchEmail;
 
-            std::cin.ignore();
-            contacts.clearError();
-            if (subChoice == 1) {
-                std::string email;
-                std::cout << "Введіть Email: ";
-                std::cin >> email;
-                std::string pib = contacts[email];
-                std::cout << "Результат пошуку: " << pib << " (Код помилки: " << contacts.getCodeError() << ")\n";
+            std::cout << "Пошук через оператор [ ]: " << db[searchEmail] << "\n";
+            if (db.getCodeError() == 404) {
+                std::cout << "  (!) Помилка: Ключ відсутній. CodeError = 404\n";
+                db.clearError();
             }
-            else {
-                std::string pib;
-                std::cout << "Введіть ПІБ: ";
-                std::getline(std::cin, pib);
-                std::string email = contacts(pib);
-                std::cout << "Результат пошуку: " << email << " (Код помилки: " << contacts.getCodeError() << ")\n";
-            }
+
+            std::cout << "Альтернативний пошук через ( ): " << db(searchEmail) << "\n";
             break;
         }
         case 3: {
-            int inputType;
-            std::cout << "\n--- ОБЕРІТЬ СПОСІБ ВВЕДЕННЯ ДЛЯ МАТРИЦЬ ---\n";
-            std::cout << "1. Вручну з клавіатури (розмір 2x3)\n";
-            std::cout << "2. Зчитати з файлу (matrix_data.txt)\n";
-            std::cout << "3. Заповнити випадковими числами\n";
-            std::cout << "Вибір: ";
-            std::cin >> inputType;
+            std::cout << "\n--- [ЗАВДАННЯ 3: Матричні вирази з 5+ операцій] ---\n";
+            int method = chooseInputMethod();
+            Matrix3D m1, m2, m3;
+            int size = 3;
 
-            Matrix3D M1(2), M2(2), M3(2);
-
-            if (inputType == 1) {
-                std::cout << "Введіть елементи (по 3 дробові числа для кожного рядка) для M1:\n"; std::cin >> M1;
-                std::cout << "Введіть елементи для M2:\n"; std::cin >> M2;
-                std::cout << "Введіть елементи для M3:\n"; std::cin >> M3;
+            if (method == 1) {
+                std::cout << "Введення матриці m1:\n"; m1.fillFromKeyboard(size);
+                std::cout << "Введення матриці m2:\n"; m2.fillFromKeyboard(size);
+                std::cout << "Введення матриці m3:\n"; m3.fillFromKeyboard(size);
             }
-            else if (inputType == 2) {
-                M1.loadFromFile("matrix_data.txt");
-                M2.loadFromFile("matrix_data.txt");
-                M3.loadFromFile("matrix_data.txt");
-                std::cout << "Матриці зчитано з диска.\n";
+            else if (method == 2) {
+                m1.fillFromFile(size, "matrix_data.txt");
+                m2.fillFromFile(size, "matrix_data.txt");
+                m3.fillFromFile(size, "matrix_data.txt");
             }
             else {
-                M1.fillRandom();
-                M2.fillRandom();
-                M3.fillRandom();
+                m1.fillRandom(size); m2.fillRandom(size); m3.fillRandom(size);
             }
 
-            std::cout << "\nМатриця M1:\n" << M1;
-            std::cout << "Матриця M2:\n" << M2;
+            std::cout << "\nЗчитані матриці точок:\n";
+            std::cout << "m1: " << m1 << "\nm2: " << m2 << "\nm3: " << m3 << "\n";
 
-            // Обчислення виразу на 5 операцій
-            Matrix3D ResultM = (M1 + M2) * 2.5 - M1 + M3 - M2;
-            std::cout << "Результат матричного виразу:\n" << ResultM;
-            std::cout << "Загальна кількість активних Matrix3D: " << Matrix3D::getMatrixCount() << "\n";
+            // Матричний вираз (5 операцій: *, +, -, унарний мінус, * на double)
+            Matrix3D m_res = m1 * 2 + m2 - (-m3) * 1.5;
+            std::cout << "\nРезультат виразу (m1 * 2 + m2 - (-m3) * 1.5):\n" << m_res << "\n";
+            std::cout << "Всього створено об'єктів матриць: " << Matrix3D::getNumMatrix() << "\n";
             break;
         }
         default:
-            std::cout << "Неправильний пункт меню. Спробуйте ще раз.\n";
+            std::cout << "Неправильний вибір! Спробуйте ще раз.\n";
         }
     }
 
-    std::cout << "\nПрограму завершено. Успішного захисту лабораторної роботи!\n";
+    std::cout << "\nПрограму успішно завершено. Гарного дня!\n";
     return 0;
 }
